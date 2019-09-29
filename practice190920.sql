@@ -278,7 +278,7 @@ SELECT employee_id,last_name,job_id,salary FROM employees WHERE salary < ALL(SEL
 #查询员工编号最小并且工资最高的员工信息
 SELECT * FROM employees WHERE employee_id = (SELECT MIN(employee_id) FROM employees) AND salary = (SELECT MAX(salary) FROM employees);
 
-#insert into employees( employee_id, first_name, `last_name`, `email`, `phone_number`, `job_id`, `salary`, `commission_pct`, `manager_id`, `department_id`, `hiredate`) values( 99, 'hyok', 'park', 'HPARK', '123.456.7890', 'IT_PROG', 8888, null, null, 60, '2015-02-01');
+#insert into employees( employee_id, first_name, `last_name`, `email`, `phone_number`, `job_id`, `salary`, `commission_pct`, `manager_id`, `department_id`, `hiredate`) values( 99, 'hao', 'park', 'HPARK', '123.456.7890', 'IT_PROG', 8888, null, null, 60, '2015-02-01');
 SELECT * FROM employees WHERE employee_id = (SELECT MIN(employee_id) FROM employees) AND salary = (SELECT MAX(salary) FROM employees);
 #25
 #查询每个部门的部门信息和对应的员工个数(不用连接查询)
@@ -452,5 +452,201 @@ ALTER TABLE students DROP INDEX uq;
 ALTER TABLE students MODIFY COLUMN s_seat INT UNIQUE;
 SHOW INDEX FROM students;
 
-ALTER TABLE students ADD FOREIGN KEY(major_id) REFERENCES majors(id);
-ALTER TABLE students DROP FOREIGN KEY major_id;
+ALTER TABLE students ADD CONSTRAINT fnk FOREIGN KEY(major_id) REFERENCES majors(id);
+ALTER TABLE students DROP INDEX major_id;
+
+ALTER TABLE students DROP FOREIGN KEY fnk;
+
+DROP TABLE students;
+DROP TABLE majors;
+
+SHOW INDEX FROM students;
+ALTER TABLE students DROP FOREIGN KEY fk_students_majors;
+#39
+
+CREATE TABLE t_identity(
+	id INT PRIMARY KEY AUTO_INCREMENT,
+	`name` VARCHAR( 20)
+);
+
+INSERT INTO t_identity VALUES( NULL, '斯沃特');
+INSERT INTO t_identity VALUES( NULL, '塞斯');
+INSERT INTO t_identity VALUES( NULL, '奥登');
+
+INSERT INTO t_identity( `name`) VALUES( '波塞冬');
+INSERT INTO t_identity( `name`) VALUES( '猎狐者');
+INSERT INTO t_identity( `name`) VALUES( '灵狐者');
+
+INSERT INTO t_identity( `name`) VALUES( '雷霆β');
+ 
+SET @@auto_increment_increment = 3;##############################################俩个@才起作用啊
+
+INSERT INTO t_identity( `name`) VALUES( '雷霆α');
+ 
+ALTER TABLE t_identity MODIFY COLUMN id INT;
+
+#40
+SHOW ENGINES;
+
+SHOW VARIABLES LIKE '%autocommit%';
+
+CREATE TABLE account(
+	id INT PRIMARY KEY AUTO_INCREMENT,
+	username VARCHAR( 20),
+	balance DOUBLE
+);
+INSERT INTO account( username, balance) VALUES( '猎狐者', 9999.99), ( '斯沃特', 6666.66);
+
+SET autocommit = 0;
+START TRANSACTION;
+UPDATE account SET balance = balance - 500 WHERE username = '斯沃特';
+UPDATE account SET balance = balance + 500 WHERE username = '猎狐者';
+COMMIT;
+
+#43
+SET autocommit = 0;
+START TRANSACTION;
+USE books;
+SELECT DATABASE();
+SELECT * FROM account;
+SAVEPOINT a;
+DELETE FROM account WHERE id = 1 OR id = 2; 
+SELECT * FROM account;
+ROLLBACK TO a;
+SELECT * FROM account;
+COMMIT;
+
+SELECT * FROM account;
+
+USE books;
+SELECT DATABASE();
+
+CREATE TABLE ages(
+	id INT,
+	age VARCHAR( 10)
+);
+
+#44
+DELIMITER $$
+CREATE PROCEDURE mypro1()
+BEGIN
+	INSERT INTO ages( id, age) VALUES( 11, '12');
+	INSERT INTO ages(id,`age`) VALUES (21,'13');
+	INSERT INTO ages(id,`age`) VALUES (31,'14');
+	INSERT INTO ages(id,`age`) VALUES (41,'15');
+END $$
+
+CALL mypro1()$$
+DELIMITER ;
+#45
+
+SHOW VARIABLES LIKE '%autocommit%';
+DROP TABLE IF EXISTS students;
+CREATE TABLE students(
+	`sno` INT PRIMARY KEY AUTO_INCREMENT,
+	`sname` VARCHAR( 20),
+	`ssex` VARCHAR( 20),
+	`sbirthday` DATE,
+	`class` VARCHAR( 20)
+);
+
+INSERT INTO `students`(`sno`,`sname`,`ssex`,`sbirthday`,`class`) VALUES('11234','波塞冬','男','1990-1-12','11601');
+INSERT INTO `students`(`sno`,`sname`,`ssex`,`sbirthday`,`class`) VALUES('11224','复仇女神','男','1993-1-12','11661');
+INSERT INTO `students`(`sno`,`sname`,`ssex`,`sbirthday`,`class`) VALUES('1113244','雷霆α','男','1997-1-12','11101');
+INSERT INTO `students`(`sno`,`sname`,`ssex`,`sbirthday`,`class`) VALUES('11298274','刀锋','男','1994-1-12','11901');
+
+ALTER TABLE students ADD COLUMN age_id INT;
+INSERT INTO students( age_id) VALUES ( 13), (342);
+DELETE FROM students WHERE sno = 11298275 OR sno = 11298276;
+UPDATE students SET age_id = 11 WHERE sno = 11224;
+UPDATE students SET age_id = 21 WHERE sno = 11234;
+UPDATE students SET age_id = 31 WHERE sno = 1113244;
+UPDATE students SET age_id = 41 WHERE sno = 11298274;
+
+DROP PROCEDURE myp2;
+
+DELIMITER @@
+CREATE PROCEDURE myp2( IN s_name VARCHAR( 20))
+BEGIN
+SELECT s.sname, a.age FROM students s INNER JOIN ages a ON s.age_id = a.id
+	WHERE s.sname = s_name;
+END@@
+
+
+
+SELECT DATABASE();  
+
+@@
+CALL myp2('刀锋');@@
+
+USE books;
+
+DELIMITER $
+CREATE PROCEDURE myp3( IN username VARCHAR( 20), IN `password` VARCHAR( 20))
+BEGIN
+DECLARE res INT DEFAULT 0;
+SELECT COUNT( *) INTO res FROM users u WHERE u.username = username AND u.password = `password`;
+SELECT IF( res > 0, '登陆成功', '登陆失败');
+END$
+
+USE myemployees;
+DROP PROCEDURE IF EXISTS myp3;
+
+CREATE TABLE users(
+	username VARCHAR( 40),
+	`password` VARCHAR( 40)
+);
+
+INSERT INTO users VALUES( '11111', '123456');
+INSERT INTO users VALUES( '22222', '123456');
+INSERT INTO users VALUES( '33333', '123456');
+
+UPDATE users SET username = '111111' WHERE username = '11111';
+UPDATE users SET username = '222222' WHERE username = '22222';
+UPDATE users SET username = '333333' WHERE username = '33333';
+#############
+CALL myp3( '111111', '123456');
+
+DELIMITER $
+CREATE PROCEDURE myp4( IN sname VARCHAR( 10), OUT agee INT)
+BEGIN
+SELECT a.age INTO agee FROM students s INNER JOIN ages a ON s.age_id = a.id WHERE s.sname = sname;
+END$
+DELIMITER ;
+###############
+CALL myp4( '刀锋', @ageee);
+
+DROP PROCEDURE IF EXISTS myp4;
+
+SELECT DATABASE();
+
+SELECT @ageee;
+##############
+DELIMITER $
+CREATE PROCEDURE myp5( IN sname VARCHAR( 20), OUT agee INT, OUT sid INT)
+BEGIN
+SELECT a.age, s.sno INTO agee, sid FROM ages a INNER JOIN students s ON a.id = s.age_id WHERE s.sname = sname;
+END$
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS myp5;
+
+CALL myp5( '波塞冬', @ageeee, @sidddd);
+
+SELECT @ageeee, @sidddd;
+###############
+DELIMITER $
+CREATE PROCEDURE myp6( INOUT a INT, INOUT b INT)
+BEGIN 
+SET a = a*2;
+SET b = b*2;
+END$
+
+SET @a = 10;
+SET @b = 20;
+
+CALL myp6( @a, @b);
+
+SELECT @a, @b;
+
+SHOW CREATE PROCEDURE myp6;
